@@ -22,8 +22,6 @@ class _HomePageState extends State<HomePage> {
   List<XFile> imageList = [];
   String errorMessage = '';
   String uid = '';
-  int crossAxisCount = 3;
-  int itemCount = 50;
 
   @override
   Widget build(BuildContext context) {
