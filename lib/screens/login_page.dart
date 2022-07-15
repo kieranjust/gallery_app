@@ -1,0 +1,222 @@
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:gallery_app/screens/signup_page.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+class LoginPage extends StatefulWidget {
+  const LoginPage({Key? key}) : super(key: key);
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final GlobalKey<FormState> _key = GlobalKey<FormState>();
+  final auth = FirebaseAuth.instance;
+  String errorMessage = '';
+
+  @override
+  Widget build(BuildContext context) {
+    User? user = FirebaseAuth.instance.currentUser;
+
+    if (user != null) {
+      return const SignupPage();
+    } else {
+      return Scaffold(
+          backgroundColor: Colors.grey[900],
+          body: SafeArea(
+            child: Form(
+                key: _key,
+                child: SafeArea(
+                    child: Center(
+                        child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.all(8.0.r),
+                        child: Text(
+                          'Welcome to the Gallery App!',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24.sp,
+                            color: Colors.grey[300],
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 20.h),
+                      Text('Sign in or sign up',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20.sp,
+                            color: Colors.grey[300],
+                          )),
+                      SizedBox(height: 25.h),
+                      Text(
+                        'Email Address:',
+                        style: TextStyle(
+                          fontSize: 24.sp,
+                          color: Colors.grey[300],
+                        ),
+                      ),
+                      Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 25.0.w),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey[600],
+                              border: Border.all(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                            child: Padding(
+                              padding: EdgeInsets.only(left: 20.0.w),
+                              child: TextFormField(
+                                controller: emailController,
+                                validator: validateEmail,
+                                keyboardType: TextInputType.emailAddress,
+                                decoration: const InputDecoration(
+                                  border: InputBorder.none,
+                                  hintText: 'Email',
+                                ),
+                              ),
+                            ),
+                          )),
+                      SizedBox(height: 10.h),
+                      Text(
+                        'Password:',
+                        style: TextStyle(
+                          fontSize: 24.sp,
+                          color: Colors.grey[300],
+                        ),
+                      ),
+                      Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 25.0.w),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey[600],
+                              border: Border.all(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                            child: Padding(
+                              padding: EdgeInsets.only(left: 20.0.w),
+                              child: TextFormField(
+                                controller: passwordController,
+                                validator: validatePassword,
+                                obscureText: true,
+                                decoration: const InputDecoration(
+                                  border: InputBorder.none,
+                                  hintText: 'Password',
+                                ),
+                              ),
+                            ),
+                          )),
+                      SizedBox(height: 25.h),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 25.0.w),
+                        child: Container(
+                            padding: EdgeInsets.all(25.r),
+                            decoration: BoxDecoration(
+                                color: Colors.deepPurple,
+                                borderRadius: BorderRadius.circular(12.r)),
+                            child: Center(
+                              child: TextButton(
+                                onPressed: () async {
+                                  if (_key.currentState!.validate()) {
+                                    try {
+                                      await FirebaseAuth.instance
+                                          .signInWithEmailAndPassword(
+                                              email: emailController.text,
+                                              password:
+                                                  passwordController.text);
+                                    } on FirebaseAuthException catch (error) {
+                                      errorMessage = error.message!;
+                                    }
+                                    setState(() {});
+                                  }
+                                },
+                                child: Text(
+                                  'Sign In',
+                                  style: TextStyle(
+                                    color: Colors.grey[300],
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18.sp,
+                                  ),
+                                ),
+                              ),
+                            )),
+                      ),
+                      SizedBox(height: 15.h),
+                      Text(
+                        errorMessage,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                      Text(
+                        'Not a member? Register now!',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.grey[300],
+                        ),
+                      ),
+                      SizedBox(height: 15.h),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 25.0.w),
+                        child: Container(
+                            padding: EdgeInsets.all(25.r),
+                            decoration: BoxDecoration(
+                                color: Colors.deepPurple,
+                                borderRadius: BorderRadius.circular(12.r)),
+                            child: Center(
+                              child: TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pushReplacement(
+                                        MaterialPageRoute(
+                                            builder: ((context) =>
+                                                const SignupPage())));
+                                  },
+                                  child: Text('Sign Up',
+                                      style: TextStyle(
+                                        color: Colors.grey[300],
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18.sp,
+                                      ))),
+                            )),
+                      ),
+                    ],
+                  ),
+                )))),
+          ));
+    }
+  }
+
+  String? validateEmail(String? formEmail) {
+    if (formEmail == null || formEmail.isEmpty) {
+      return 'Email address is required.';
+    }
+
+    String pattern = r'\w+@\w+\.\w+';
+    RegExp regex = RegExp(pattern);
+    if (!regex.hasMatch(formEmail)) {
+      return 'Invalid email address format.';
+    }
+
+    return null;
+  }
+
+  String? validatePassword(String? formPassword) {
+    if (formPassword == null || formPassword.isEmpty) {
+      return 'Password is required.';
+    }
+
+    String pattern =
+        r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~]).{8,}$';
+    RegExp regex = RegExp(pattern);
+    if (!regex.hasMatch(formPassword)) {
+      return '''
+      Password must be at least 8 characters,
+      include an uppercase letter, number and symbol.
+      ''';
+    }
+
+    return null;
+  }
+}
