@@ -23,6 +23,7 @@ class _HomePageState extends State<HomePage> {
   List<XFile> imageList = [];
   String errorMessage = '';
   String uid = '';
+  int columns = 3;
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +40,14 @@ class _HomePageState extends State<HomePage> {
           actions: <Widget>[
             IconButton(
               icon: const Icon(CupertinoIcons.square_grid_2x2),
-              onPressed: () {},
+              onPressed: () {
+                if (columns == 3) {
+                  columns = 5;
+                } else {
+                  columns = 3;
+                }
+                setState(() {});
+              },
             ),
             IconButton(
               icon: const Icon(CupertinoIcons.sort_down),
@@ -82,7 +90,7 @@ class _HomePageState extends State<HomePage> {
                             )
                           : snapshot.hasData
                               ? GridView.count(
-                                  crossAxisCount: 3,
+                                  crossAxisCount: columns,
                                   mainAxisSpacing: 8,
                                   crossAxisSpacing: 4,
                                   childAspectRatio: 1,
