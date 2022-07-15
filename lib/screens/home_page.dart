@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gallery_app/storage_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'login_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -82,11 +83,18 @@ class _HomePageState extends State<HomePage> {
                           : snapshot.hasData
                               ? GridView.count(
                                   crossAxisCount: 3,
-                                  mainAxisSpacing: 12,
-                                  crossAxisSpacing: 8,
+                                  mainAxisSpacing: 8,
+                                  crossAxisSpacing: 4,
                                   childAspectRatio: 1,
                                   children: snapshot.data!.docs
-                                      .map((e) => Image.network(e.get('url')))
+                                      .map((e) => CachedNetworkImage(
+                                            imageUrl: e.get('url'),
+                                            placeholder: (context, url) =>
+                                                const CircularProgressIndicator(),
+                                            errorWidget:
+                                                (context, url, error) =>
+                                                    const Icon(Icons.error),
+                                          ))
                                       .toList(),
                                 )
                               : const Center(
@@ -97,7 +105,7 @@ class _HomePageState extends State<HomePage> {
                 onPressed: () {
                   showDialog(
                       context: context,
-                      builder: (context) {
+                      builder: (dialogContext) {
                         return Dialog(
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
@@ -121,14 +129,21 @@ class _HomePageState extends State<HomePage> {
                                             color: Colors.black,
                                             fontSize: 16.sp)),
                                     onPressed: () =>
-                                        uploadImage(ImageSource.gallery)),
+                                        uploadImage(ImageSource.gallery)
+                                            .then((value) {
+                                          Navigator.pop(dialogContext);
+                                        })),
                                 TextButton(
-                                    child: Text('Pick from camera',
-                                        style: TextStyle(
-                                            color: Colors.black,
-                                            fontSize: 16.sp)),
-                                    onPressed: () =>
-                                        uploadImage(ImageSource.camera)),
+                                  child: Text('Pick from camera',
+                                      style: TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 16.sp)),
+                                  onPressed: () =>
+                                      uploadImage(ImageSource.camera)
+                                          .then((value) {
+                                    Navigator.pop(dialogContext);
+                                  }),
+                                ),
                                 TextButton(
                                     child: Text('Pick from URL',
                                         style: TextStyle(
