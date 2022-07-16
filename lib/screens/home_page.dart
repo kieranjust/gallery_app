@@ -7,6 +7,7 @@ import 'package:gallery_app/storage_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:photo_view/photo_view.dart';
 import 'login_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -164,7 +165,7 @@ class _HomePageState extends State<HomePage> {
                         );
                       });
                 },
-                child: const Icon(Icons.add),
+                child: const Icon(Icons.add_a_photo),
               ),
             ],
           ),
@@ -173,7 +174,9 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // TODO: Fix the styling of this dialog and get the image to show
   Future uploadImage(ImageSource source) async {
+    final rename = TextEditingController();
     try {
       final image = await ImagePicker().pickImage(source: source);
       if (image == null) return;
@@ -181,8 +184,46 @@ class _HomePageState extends State<HomePage> {
       final imageTemporary = XFile(image.path);
       setState(() => this.image = imageTemporary);
       errorMessage = '';
-
-      storage.uploadFile(image.path, image.name, uid);
+      await showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('Confirm upload'),
+              content: Container(
+                height: MediaQuery.of(context).size.height / 3,
+                width: double.infinity,
+                // decoration: BoxDecoration(
+                //     image: DecorationImage(
+                //         image: AssetImage(image.path),
+                //         fit: BoxFit.cover)),
+              ),
+              actions: [
+                TextFormField(
+                    controller: rename,
+                    decoration: const InputDecoration(
+                      focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(color: Colors.deepPurple)),
+                      hintText: 'Name your image(optional)',
+                    )),
+                TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: const Text('Cancel')),
+                TextButton(
+                    onPressed: () {
+                      if (rename.text.isEmpty) {
+                        storage.uploadFile(image.path, image.name, uid);
+                      } else {
+                        storage
+                            .uploadFile(image.path, "${rename.text}.jpg", uid)
+                            .then(((value) => Navigator.pop(context)));
+                      }
+                    },
+                    child: const Text('Confirm'))
+              ],
+            );
+          });
     } on PlatformException catch (error) {
       errorMessage = error.message!;
     }

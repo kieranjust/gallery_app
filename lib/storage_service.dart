@@ -27,6 +27,7 @@ class Storage {
       await firestore.collection('users/$uid/images').add({
         'url': url,
         'filename': fileName,
+        'uploaded by': uid,
         'uploaded': DateTime.now(),
         'favorite': 0,
       }).whenComplete(() => print(
