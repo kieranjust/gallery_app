@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:gallery_app/screens/image_view.dart';
 import 'package:gallery_app/storage_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart';
@@ -97,7 +98,13 @@ class _HomePageState extends State<HomePage> {
                                   crossAxisSpacing: 4,
                                   children: snapshot.data!.docs
                                       .map((e) => GestureDetector(
-                                              child: Container(
+                                          onTap: () {
+                                            Navigator.push(context,
+                                                MaterialPageRoute(builder: (_) {
+                                              return ImageView(e);
+                                            }));
+                                          },
+                                          child: Container(
                                             decoration: BoxDecoration(
                                                 color: Colors.transparent,
                                                 borderRadius: BorderRadius.all(
