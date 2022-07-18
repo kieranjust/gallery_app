@@ -7,6 +7,7 @@ import 'package:gallery_app/storage_service.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:photo_view/photo_view.dart';
 import 'login_page.dart';
 
@@ -94,16 +95,35 @@ class _HomePageState extends State<HomePage> {
                                   crossAxisCount: columns,
                                   mainAxisSpacing: 8,
                                   crossAxisSpacing: 4,
-                                  childAspectRatio: 1,
                                   children: snapshot.data!.docs
-                                      .map((e) => CachedNetworkImage(
-                                            imageUrl: e.get('url'),
-                                            placeholder: (context, url) =>
-                                                const CircularProgressIndicator(),
-                                            errorWidget:
-                                                (context, url, error) =>
-                                                    const Icon(Icons.error),
-                                          ))
+                                      .map((e) => GestureDetector(
+                                              child: Container(
+                                            decoration: BoxDecoration(
+                                                color: Colors.transparent,
+                                                borderRadius: BorderRadius.all(
+                                                    Radius.circular(12.r)),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                      color: Colors.grey[900]!
+                                                          .withOpacity(0.5),
+                                                      spreadRadius: 1,
+                                                      blurRadius: 6,
+                                                      offset:
+                                                          const Offset(0, 0))
+                                                ]),
+                                            child: ClipRRect(
+                                                borderRadius: BorderRadius.all(
+                                                    Radius.circular(12.r)),
+                                                child: CachedNetworkImage(
+                                                  imageUrl: e.get('url'),
+                                                  placeholder: (context, url) =>
+                                                      const CircularProgressIndicator(),
+                                                  errorWidget: (context, url,
+                                                          error) =>
+                                                      const Icon(Icons.error),
+                                                  fit: BoxFit.cover,
+                                                )),
+                                          )))
                                       .toList(),
                                 )
                               : const Center(
