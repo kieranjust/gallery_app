@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:gallery_app/storage_service.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/src/foundation/key.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -22,6 +23,7 @@ class _ImageViewState extends State<ImageView> {
   @override
   Widget build(BuildContext context) {
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
+    final Storage storage = Storage();
     User? user = FirebaseAuth.instance.currentUser;
     String? uid = '';
     final renameController = TextEditingController();
@@ -29,6 +31,9 @@ class _ImageViewState extends State<ImageView> {
     DateTime uploadedAt = uploaded.toDate();
     String uploadedAtFormatted = DateFormat.yMEd().format(uploadedAt);
     String filename = widget.image.get('filename');
+    String url = widget.image.get('url');
+    String docId = widget.image.reference.id;
+
     uid = user?.uid;
     return Scaffold(
         body: Column(
@@ -56,10 +61,8 @@ class _ImageViewState extends State<ImageView> {
         ),
         Row(
           children: [
-            BackButton(
-                onPressed: () => Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                        builder: ((context) => const HomePage())))),
+            BackButton(onPressed: () => Navigator.of(context).pop()),
+            const Spacer(),
             IconButton(
                 onPressed: () {
                   showDialog(
@@ -142,14 +145,10 @@ class _ImageViewState extends State<ImageView> {
                                                   }).then(
                                                     (value) {
                                                       // TODO: Get name updating
+                                                      filename =
+                                                          '${renameController.text}.jpg';
                                                       Navigator.of(context)
-                                                          .pop();
-                                                      setState(
-                                                        () {
-                                                          filename =
-                                                              '${renameController.text}.jpg';
-                                                        },
-                                                      );
+                                                          .pop(filename);
                                                     },
                                                   );
                                                 }))
@@ -159,7 +158,91 @@ class _ImageViewState extends State<ImageView> {
                                 ])));
                       });
                 },
-                icon: const Icon(Icons.edit))
+                icon: const Icon(Icons.edit)),
+            const Spacer(),
+            IconButton(
+              onPressed: () {
+                showDialog(
+                    context: context,
+                    builder: (context) {
+                      return Dialog(
+                          backgroundColor: Colors.grey[300],
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          elevation: 16,
+                          child: SizedBox(
+                              height: 80.h,
+                              width: 220.w,
+                              child: ListView(children: [
+                                Text(
+                                  "Delete Image",
+                                  style: TextStyle(
+                                      color: Colors.grey[900],
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 24.sp),
+                                  textAlign: TextAlign.center,
+                                ),
+                                SizedBox(
+                                  width: 220.w,
+                                  child: Row(
+                                    children: [
+                                      Padding(
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 16.0.h,
+                                            vertical: 8.0.w),
+                                        child: TextButton(
+                                            onPressed: () {
+                                              Navigator.of(context).pop();
+                                            },
+                                            child: const Text(
+                                              'Cancel',
+                                              style: TextStyle(
+                                                  color: Colors.deepPurple),
+                                            )),
+                                      ),
+                                      const Spacer(),
+                                      Padding(
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 16.0.w,
+                                              vertical: 8.0.w),
+                                          child: Container(
+                                            height: 40.h,
+                                            padding: EdgeInsets.all(4.r),
+                                            decoration: BoxDecoration(
+                                                color: Colors.red,
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                        12.r)),
+                                            child: TextButton(
+                                                child: const Text(
+                                                  'Delete',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                                onPressed: () async {
+                                                  await storage
+                                                      .deleteFile(
+                                                          url, uid!, docId)
+                                                      .then((value) {})
+                                                      .then(
+                                                    (value) {
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                    },
+                                                  );
+                                                }),
+                                          ))
+                                    ],
+                                  ),
+                                ),
+                              ])));
+                    });
+              },
+              icon: const Icon(Icons.delete),
+            )
           ],
         )
       ],
