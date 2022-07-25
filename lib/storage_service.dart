@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart' as firebase_core;
 import 'package:firebase_storage/firebase_storage.dart' as firebase_storage;
@@ -30,6 +29,7 @@ class Storage {
         'uploaded by': uid,
         'uploaded': DateTime.now(),
         'favorite': 0,
+        'savedFromUrl': 0,
       }).whenComplete(() => print(
           "$fileName uploaded to Firebase Storage and reference saved in Firestore."));
     } on firebase_core.FirebaseException catch (error) {
@@ -41,19 +41,29 @@ class Storage {
     String url,
     String uid,
     String docId,
+    int savedFromUrl,
   ) async {
-    try {
-      await storage
-          .refFromURL(url)
-          .delete()
-          .whenComplete(() => print('Document deleted from storage.'));
+    // Images saved from url do not have
+    if (savedFromUrl == 0) {
+      try {
+        await firestore
+            .collection('users/$uid/images')
+            .doc(docId)
+            .delete()
+            .whenComplete(() => print("Document deleted from Firestore."));
+        await storage
+            .refFromURL(url)
+            .delete()
+            .whenComplete(() => print('Document deleted from storage.'));
+      } on firebase_core.FirebaseException catch (error) {
+        print(error);
+      }
+    } else {
       await firestore
           .collection('users/$uid/images')
           .doc(docId)
           .delete()
           .whenComplete(() => print("Document deleted from Firestore."));
-    } on firebase_core.FirebaseException catch (error) {
-      print(error);
     }
   }
 }

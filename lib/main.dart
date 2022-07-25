@@ -16,15 +16,16 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ScreenUtilInit(
+      designSize: const Size(360, 640),
       builder: (context, child) => MaterialApp(
         title: 'Gallery App',
         theme: ThemeData(
           primarySwatch: Colors.purple,
           backgroundColor: Colors.grey[900],
         ),
+        debugShowCheckedModeBanner: false,
         home: const LoginPage(),
       ),
-      designSize: const Size(360, 640),
     );
   }
 }
