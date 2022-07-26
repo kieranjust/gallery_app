@@ -28,8 +28,8 @@ class Storage {
         'filename': fileName,
         'uploaded by': uid,
         'uploaded': DateTime.now(),
-        'favorite': 0,
-        'savedFromUrl': 0,
+        'favorite': false,
+        'savedFromUrl': false,
       }).whenComplete(() => print(
           "$fileName uploaded to Firebase Storage and reference saved in Firestore."));
     } on firebase_core.FirebaseException catch (error) {
@@ -41,10 +41,10 @@ class Storage {
     String url,
     String uid,
     String docId,
-    int savedFromUrl,
+    bool savedFromUrl,
   ) async {
     // Images saved from url do not have
-    if (savedFromUrl == 0) {
+    if (savedFromUrl == false) {
       try {
         await firestore
             .collection('users/$uid/images')

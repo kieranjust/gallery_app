@@ -1,18 +1,14 @@
-import 'dart:ffi';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:favorite_button/favorite_button.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:gallery_app/storage_service.dart';
-import 'package:flutter/src/widgets/framework.dart';
-import 'package:flutter/src/foundation/key.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:photo_view/photo_view.dart';
+// ignore: depend_on_referenced_packages
 import 'package:intl/intl.dart';
-
-import 'home_page.dart';
 
 class ImageView extends StatefulWidget {
   final QueryDocumentSnapshot<Object?> image;
@@ -33,14 +29,23 @@ class _ImageViewState extends State<ImageView> {
           User? user = FirebaseAuth.instance.currentUser;
           String? uid = '';
           final renameController = TextEditingController();
+          final shareController = TextEditingController();
           Timestamp uploaded = widget.image.get('uploaded');
+          String uploadedBy = widget.image.get('uploaded by');
           DateTime uploadedAt = uploaded.toDate();
           String uploadedAtFormatted = DateFormat.yMEd().format(uploadedAt);
           String filename = widget.image.get('filename');
           String url = widget.image.get('url');
           String docId = widget.image.reference.id;
           bool favorite = widget.image.get('favorite');
-          int savedFromUrl = widget.image.get('savedFromUrl');
+          bool savedFromUrl = widget.image.get('savedFromUrl');
+
+          // TODO: Get this function working
+          // Always returns as if user does not exist, even when user exists
+          Future checkIfUserExists(String userId) async {
+            var user = await firestore.collection('users').doc(userId).get();
+            return user.exists;
+          }
 
           uid = user?.uid;
           return Scaffold(
@@ -79,7 +84,7 @@ class _ImageViewState extends State<ImageView> {
                       ),
                       const Spacer(),
                       FavoriteButton(
-                          iconSize: 45,
+                          iconSize: 35,
                           isFavorite: favorite,
                           iconColor: Colors.deepPurple,
                           valueChanged: (favorite) {
@@ -112,7 +117,7 @@ class _ImageViewState extends State<ImageView> {
                                             BorderRadius.circular(12)),
                                     elevation: 16,
                                     child: SizedBox(
-                                        height: 160.h,
+                                        height: isPortrait ? 160.h : 300.h,
                                         width: 220.w,
                                         child: ListView(children: [
                                           Text(
@@ -204,7 +209,7 @@ class _ImageViewState extends State<ImageView> {
                                                                   '${renameController.text}.jpg';
                                                               Navigator.of(
                                                                       context)
-                                                                  .pop(
+                                                                  .pop(filename =
                                                                       filename);
                                                             },
                                                           );
@@ -218,6 +223,131 @@ class _ImageViewState extends State<ImageView> {
                         icon: const Icon(Icons.edit),
                         color: Colors.deepPurple,
                       ),
+                      const Spacer(),
+                      IconButton(
+                          onPressed: () {
+                            showDialog(
+                                context: context,
+                                builder: (context) {
+                                  return Dialog(
+                                      backgroundColor: Colors.grey[900],
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12)),
+                                      elevation: 16,
+                                      child: SizedBox(
+                                          height: isPortrait ? 160.h : 300.h,
+                                          width: 220.w,
+                                          child: ListView(children: [
+                                            Text(
+                                              "Share Image",
+                                              style: TextStyle(
+                                                  color: Colors.deepPurple,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 24.sp),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                            SizedBox(
+                                              width: 220.w,
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 16.0,
+                                                        vertical: 8.0),
+                                                child: TextFormField(
+                                                  controller: shareController,
+                                                  decoration: InputDecoration(
+                                                      hintText:
+                                                          'Enter UID of User to Share',
+                                                      hintStyle: TextStyle(
+                                                          color: Colors
+                                                              .grey[600])),
+                                                ),
+                                              ),
+                                            ),
+                                            SizedBox(
+                                              width: 220.w,
+                                              child: Row(
+                                                children: [
+                                                  Padding(
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                            horizontal: 16.0.h,
+                                                            vertical: 8.0.w),
+                                                    child: TextButton(
+                                                        onPressed: () {
+                                                          Navigator.of(context)
+                                                              .pop();
+                                                        },
+                                                        child: const Text(
+                                                          'Cancel',
+                                                          style: TextStyle(
+                                                              color: Colors
+                                                                  .purple),
+                                                        )),
+                                                  ),
+                                                  const Spacer(),
+                                                  Padding(
+                                                      padding:
+                                                          EdgeInsets.symmetric(
+                                                              horizontal:
+                                                                  16.0.w,
+                                                              vertical: 8.0.w),
+                                                      child: TextButton(
+                                                          child: const Text(
+                                                            'Share',
+                                                            style: TextStyle(
+                                                                color: Colors
+                                                                    .purple),
+                                                          ),
+                                                          onPressed: () async {
+                                                            // if (checkIfUserExists(
+                                                            //         shareController
+                                                            //             .text) ==
+                                                            //     Future.value(
+                                                            //         true)) {
+                                                            try {
+                                                              await firestore
+                                                                  .collection(
+                                                                      'users/${shareController.text}/shared')
+                                                                  .add({
+                                                                    'url': url,
+                                                                    'filename':
+                                                                        filename,
+                                                                    'uploaded by':
+                                                                        uploadedBy,
+                                                                    'uploaded':
+                                                                        uploaded,
+                                                                    'favorite':
+                                                                        false,
+                                                                    'savedFromUrl':
+                                                                        savedFromUrl,
+                                                                  })
+                                                                  .whenComplete(
+                                                                      () => print(
+                                                                          "$filename shared with ${shareController.text}."))
+                                                                  .then(
+                                                                      (value) {
+                                                                    Navigator.of(
+                                                                            context)
+                                                                        .pop();
+                                                                  });
+                                                            } on FirebaseException catch (error) {
+                                                              print(error);
+                                                            }
+                                                            // } else {
+                                                            //   print(
+                                                            //       'User does not exist');
+                                                            // }
+                                                          }))
+                                                ],
+                                              ),
+                                            ),
+                                          ])));
+                                });
+                          },
+                          icon: const Icon(Icons.share),
+                          color: Colors.deepPurple),
                       const Spacer(),
                       IconButton(
                         onPressed: () {

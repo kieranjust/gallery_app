@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/material.dart';
@@ -35,8 +34,14 @@ class _HomePageState extends State<HomePage> {
   String imageFileName = '';
   String sortBy = 'filename';
   bool sortDecending = false;
+  bool isGalleryStream = true;
   Stream<QuerySnapshot> get galleryStream => firestore
       .collection('users/$uid/images')
+      .orderBy(sortBy, descending: sortDecending)
+      .snapshots();
+
+  Stream<QuerySnapshot> get sharedStream => firestore
+      .collection('users/$uid/shared')
       .orderBy(sortBy, descending: sortDecending)
       .snapshots();
 
@@ -82,9 +87,14 @@ class _HomePageState extends State<HomePage> {
                         },
                       ),
                       IconButton(
-                        icon: const Icon(CupertinoIcons.sort_down),
+                        icon: const Icon(Icons.share),
                         color: Colors.deepPurple,
                         onPressed: () {
+                          if (isGalleryStream == true) {
+                            isGalleryStream = false;
+                          } else {
+                            isGalleryStream = true;
+                          }
                           setState(() {});
                         },
                       ),
@@ -184,7 +194,9 @@ class _HomePageState extends State<HomePage> {
                             height: 475.h,
                             width: 400.w,
                             child: StreamBuilder<QuerySnapshot>(
-                                stream: galleryStream,
+                                stream: isGalleryStream
+                                    ? galleryStream
+                                    : sharedStream,
                                 builder: (context, snapshot) {
                                   return snapshot.hasError
                                       ? const Center(
@@ -353,154 +365,170 @@ class _HomePageState extends State<HomePage> {
   uploadImageBuilder() {
     showDialog(
         context: context,
-        builder: (context) {
-          return Dialog(
-              backgroundColor: Colors.grey[900],
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              elevation: 16,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SingleChildScrollView(
-                    child: SizedBox(
-                        height: 190.h,
-                        width: 190.w,
-                        child: ListView(children: [
-                          Text(
-                            "Upload an Image",
-                            style: TextStyle(
-                                color: Colors.deepPurple,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 24.sp),
-                            textAlign: TextAlign.center,
-                          ),
-                          TextButton(
-                              child: Text('Pick from gallery',
+        builder: (context) =>
+            OrientationBuilder(builder: (context, orientation) {
+              final isPortrait = orientation == Orientation.portrait;
+              {
+                return Dialog(
+                    backgroundColor: Colors.grey[900],
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    elevation: 16,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SingleChildScrollView(
+                          child: SizedBox(
+                              height: isPortrait ? 190.h : 350.h,
+                              width: 190.w,
+                              child: ListView(children: [
+                                Text(
+                                  "Upload an Image",
                                   style: TextStyle(
-                                      color: Colors.purple, fontSize: 16.sp)),
-                              onPressed: () => uploadImage(ImageSource.gallery)
-                                      .then((value) {
+                                      color: Colors.deepPurple,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 24.sp),
+                                  textAlign: TextAlign.center,
+                                ),
+                                TextButton(
+                                    child: Text('Pick from gallery',
+                                        style: TextStyle(
+                                            color: Colors.purple,
+                                            fontSize: 16.sp)),
+                                    onPressed: () =>
+                                        uploadImage(ImageSource.gallery)
+                                            .then((value) {
+                                          Navigator.pop(context);
+                                        })),
+                                TextButton(
+                                  child: Text('Pick from camera',
+                                      style: TextStyle(
+                                          color: Colors.purple,
+                                          fontSize: 16.sp)),
+                                  onPressed: () =>
+                                      uploadImage(ImageSource.camera)
+                                          .then((value) {
                                     Navigator.pop(context);
-                                  })),
-                          TextButton(
-                            child: Text('Pick from camera',
-                                style: TextStyle(
-                                    color: Colors.purple, fontSize: 16.sp)),
-                            onPressed: () =>
-                                uploadImage(ImageSource.camera).then((value) {
-                              Navigator.pop(context);
-                            }),
-                          ),
-                          TextButton(
-                            child: Text('Pick from URL',
-                                style: TextStyle(
-                                    color: Colors.purple, fontSize: 16.sp)),
-                            onPressed: () {
-                              uploadImageFromURLBuilder();
-                            },
-                          )
-                        ])),
-                  ),
-                ],
-              ));
-        });
+                                  }),
+                                ),
+                                TextButton(
+                                  child: Text('Pick from URL',
+                                      style: TextStyle(
+                                          color: Colors.purple,
+                                          fontSize: 16.sp)),
+                                  onPressed: () {
+                                    uploadImageFromURLBuilder();
+                                  },
+                                )
+                              ])),
+                        ),
+                      ],
+                    ));
+              }
+            }));
   }
 
   uploadImageFromURLBuilder() {
     {
       showDialog(
           context: context,
-          builder: (context) {
-            return Dialog(
-                backgroundColor: Colors.grey[900],
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                elevation: 16,
-                child: SizedBox(
-                    height: 240.h,
-                    width: 220.w,
-                    child: ListView(children: [
-                      Text(
-                        "Upload with URL",
-                        style: TextStyle(
-                            color: Colors.deepPurple,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 24.sp),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(
-                        width: 220.w,
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 16.0.w, vertical: 8.0.h),
-                          child: TextFormField(
-                              controller: urlController,
-                              decoration: InputDecoration(
-                                hintText: 'Enter image URL',
-                                hintStyle: TextStyle(
-                                  color: Colors.grey[600],
-                                ),
-                              )),
-                        ),
-                      ),
-                      SizedBox(
-                        width: 220.w,
-                        child: Row(
-                          children: [
+          builder: (context) =>
+              OrientationBuilder(builder: (context, orientation) {
+                final isPortrait = orientation == Orientation.portrait;
+                {
+                  return Dialog(
+                      backgroundColor: Colors.grey[900],
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      elevation: 16,
+                      child: SizedBox(
+                          height: isPortrait ? 240.h : 420.h,
+                          width: isPortrait ? 220.w : 300.w,
+                          child: ListView(children: [
+                            Text(
+                              "Upload with URL",
+                              style: TextStyle(
+                                  color: Colors.deepPurple,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 24.sp),
+                              textAlign: TextAlign.center,
+                            ),
                             SizedBox(
                               width: 220.w,
                               child: Padding(
                                 padding: EdgeInsets.symmetric(
                                     horizontal: 16.0.w, vertical: 8.0.h),
                                 child: TextFormField(
-                                    controller: fileNameController,
+                                    controller: urlController,
                                     decoration: InputDecoration(
-                                      hintText: 'Image Name(Optional)',
-                                      hintStyle:
-                                          TextStyle(color: Colors.grey[600]),
+                                      hintText: 'Enter image URL',
+                                      hintStyle: TextStyle(
+                                        color: Colors.grey[600],
+                                      ),
                                     )),
                               ),
                             ),
-                            const Text('.jpg',
-                                style: TextStyle(color: Colors.purple))
-                          ],
-                        ),
-                      ),
-                      SizedBox(
-                        width: 220.w,
-                        child: Row(
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 16.0.h, vertical: 8.0.w),
-                              child: TextButton(
-                                  onPressed: () {
-                                    Navigator.of(context).pop();
-                                  },
-                                  child: const Text(
-                                    'Cancel',
-                                    style: TextStyle(color: Colors.purple),
-                                  )),
-                            ),
-                            const Spacer(),
-                            Padding(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 16.0.w, vertical: 8.0.w),
-                                child: TextButton(
-                                    child: const Text(
-                                      'Upload',
-                                      style: TextStyle(color: Colors.purple),
+                            SizedBox(
+                              width: 220.w,
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 220.w,
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 16.0.w, vertical: 8.0.h),
+                                      child: TextFormField(
+                                          controller: fileNameController,
+                                          decoration: InputDecoration(
+                                            hintText: 'Image Name(Optional)',
+                                            hintStyle: TextStyle(
+                                                color: Colors.grey[600]),
+                                          )),
                                     ),
-                                    onPressed: () {
-                                      uploadImageFromURL(urlController.text,
-                                          fileNameController.text);
-                                    }))
-                          ],
-                        ),
-                      )
-                    ])));
-          });
+                                  ),
+                                  const Text('.jpg',
+                                      style: TextStyle(color: Colors.purple))
+                                ],
+                              ),
+                            ),
+                            SizedBox(
+                              width: 220.w,
+                              child: Row(
+                                children: [
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 16.0.h, vertical: 8.0.w),
+                                    child: TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: const Text(
+                                          'Cancel',
+                                          style:
+                                              TextStyle(color: Colors.purple),
+                                        )),
+                                  ),
+                                  const Spacer(),
+                                  Padding(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 16.0.w, vertical: 8.0.w),
+                                      child: TextButton(
+                                          child: const Text(
+                                            'Upload',
+                                            style:
+                                                TextStyle(color: Colors.purple),
+                                          ),
+                                          onPressed: () {
+                                            uploadImageFromURL(
+                                                urlController.text,
+                                                fileNameController.text);
+                                          }))
+                                ],
+                              ),
+                            )
+                          ])));
+                }
+              }));
     }
   }
 
@@ -541,8 +569,8 @@ class _HomePageState extends State<HomePage> {
                                     'filename': '$imageFileName.jpg',
                                     'uploaded by': uid,
                                     'uploaded': DateTime.now(),
-                                    'favorite': 0,
-                                    'savedFromUrl': 1,
+                                    'favorite': false,
+                                    'savedFromUrl': true,
                                   })
                                   .whenComplete(() => print(
                                       "$imageFileName Image reference saved in Firestore."))
